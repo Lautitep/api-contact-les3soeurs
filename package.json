@@ -1,0 +1,9 @@
+{
+  "name": "api-contact",
+  "version": "1.0.0",
+  "main": "api/contact.js",
+  "type": "module",
+  "dependencies": {
+    "resend": "^3.2.0"
+  }
+}
