@@ -3,9 +3,11 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -15,24 +17,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = req.body;
+    // Vercel fournit req.body quand on envoie du JSON
+    const data = req.body || {};
 
-    // honeypot anti-bot
-    if (data.website_trap) {
+    const { website_trap, firstName, lastName, email, phone, date, message } =
+      data;
+
+    // Honeypot
+    if (website_trap) {
       return res.status(200).json({ ok: true });
     }
 
-    const { firstName, lastName, email, phone, date, message } = data;
+    const subject = `Nouveau contact — ${firstName || ''} ${lastName || ''}`;
+    const safeMessage = (message || '').replace(/</g, '&lt;');
 
-    const subject = `Nouveau contact — ${firstName} ${lastName}`;
     const html = `
       <h2>Nouveau message depuis le site Les 3 Sœurs</h2>
-      <p><strong>Nom :</strong> ${firstName ?? ''} ${lastName ?? ''}</p>
-      <p><strong>Email :</strong> ${email ?? ''}</p>
-      <p><strong>Téléphone :</strong> ${phone ?? ''}</p>
-      <p><strong>Date de l'évènement :</strong> ${date ?? ''}</p>
+      <p><strong>Nom :</strong> ${firstName || ''} ${lastName || ''}</p>
+      <p><strong>Email :</strong> ${email || ''}</p>
+      <p><strong>Téléphone :</strong> ${phone || ''}</p>
+      <p><strong>Date :</strong> ${date || ''}</p>
       <p><strong>Message :</strong></p>
-      <p style="white-space:pre-wrap">${(message ?? '').replace(/</g, '&lt;')}</p>
+      <p style="white-space:pre-wrap">${safeMessage}</p>
     `;
 
     await resend.emails.send({
